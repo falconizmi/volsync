@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/protocol"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/syncthing/syncthing/lib/config"
-	"github.com/syncthing/syncthing/lib/protocol"
 )
 
 var _ = Describe("Syncthing connection", func() {

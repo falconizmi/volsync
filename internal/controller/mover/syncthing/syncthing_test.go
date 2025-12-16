@@ -30,8 +30,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/syncthing/syncthing/lib/config"
-	"github.com/syncthing/syncthing/lib/protocol"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/protocol"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -527,6 +527,8 @@ var _ = Describe("When an RS specifies Syncthing", func() {
 				})
 
 				It("sets the options", func() {
+					//FIXME: Propose to change the name of PVC variable -> it can lead to missunderstanding when searching
+					// that it uses syncthing/config
 					config, err := mover.ensureConfigPVC(ctx, dataPVC)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(config).NotTo(BeNil())

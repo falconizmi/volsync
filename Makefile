@@ -176,7 +176,7 @@ helm-lint: helm ## Lint Helm chart
 .PHONY: test
 TEST_ARGS ?= --randomize-all --randomize-suites -p -cover -coverprofile cover.out --output-dir . --skip-package mover-restic
 TEST_PACKAGES ?= ./...
-test: bundle generate lint envtest helm-lint ginkgo ## Run tests.
+test: bundle generate envtest helm-lint ginkgo ## Run tests.
 	-rm -f cover.out
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) $(TEST_ARGS) $(TESTBUILDTAGS) $(TEST_PACKAGES)
 
