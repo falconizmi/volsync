@@ -25,8 +25,8 @@ import (
 
 	"github.com/backube/volsync/api/v1alpha1"
 	"github.com/backube/volsync/internal/controller/mover/syncthing/api"
-	"github.com/syncthing/syncthing/lib/config"
-	"github.com/syncthing/syncthing/lib/protocol"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/protocol"
 )
 
 // updateSyncthingDevices Updates the Syncthing's connected devices with the provided peerList.
