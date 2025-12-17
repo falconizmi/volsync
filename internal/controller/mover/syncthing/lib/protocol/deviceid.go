@@ -7,11 +7,11 @@
 package protocol
 
 import (
-// 	"bytes"
-// 	"crypto/sha256"
+	// 	"bytes"
+	// 	"crypto/sha256"
 	"encoding/base32"
-// 	"encoding/binary"
-// 	"errors"
+	// 	"encoding/binary"
+	// 	"errors"
 	"fmt"
 	"strings"
 )
@@ -28,9 +28,9 @@ type (
 )
 
 var (
-// 	LocalDeviceID  = repeatedDeviceID(0xff)
-// 	GlobalDeviceID = repeatedDeviceID(0xf8)
-	EmptyDeviceID  = DeviceID{ /* all zeroes */ }
+	// 	LocalDeviceID  = repeatedDeviceID(0xff)
+	// 	GlobalDeviceID = repeatedDeviceID(0xf8)
+	EmptyDeviceID = DeviceID{ /* all zeroes */ }
 )
 
 // func repeatedDeviceID(v byte) (d DeviceID) {

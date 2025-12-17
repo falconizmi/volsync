@@ -11,10 +11,10 @@ import (
 )
 
 type Configuration struct {
-	Version                  int                   `json:"version" xml:"version,attr"`
-	Folders                  []FolderConfiguration `json:"folders" xml:"folder"`
-	Devices                  []DeviceConfiguration `json:"devices" xml:"device"`
-	GUI                      GUIConfiguration      `json:"gui" xml:"gui"`
+	Version int                   `json:"version" xml:"version,attr"`
+	Folders []FolderConfiguration `json:"folders" xml:"folder"`
+	Devices []DeviceConfiguration `json:"devices" xml:"device"`
+	GUI     GUIConfiguration      `json:"gui" xml:"gui"`
 	// LDAP                     LDAPConfiguration     `json:"ldap" xml:"ldap"`
 	// Options                  OptionsConfiguration  `json:"options" xml:"options"`
 	// IgnoredDevices           []ObservedDevice      `json:"remoteIgnoredDevices" xml:"remoteIgnoredDevice"`
@@ -23,14 +23,14 @@ type Configuration struct {
 }
 
 type DeviceConfiguration struct {
-	DeviceID                 protocol.DeviceID `json:"deviceID" xml:"id,attr" nodefault:"true"`
-	Name                     string            `json:"name" xml:"name,attr,omitempty"`
-	Addresses                []string          `json:"addresses" xml:"address,omitempty"`
+	DeviceID  protocol.DeviceID `json:"deviceID" xml:"id,attr" nodefault:"true"`
+	Name      string            `json:"name" xml:"name,attr,omitempty"`
+	Addresses []string          `json:"addresses" xml:"address,omitempty"`
 	// Compression              Compression       `json:"compression" xml:"compression,attr"`
 	// CertName                 string            `json:"certName" xml:"certName,attr,omitempty"`
-	Introducer               bool              `json:"introducer" xml:"introducer,attr"`
+	Introducer bool `json:"introducer" xml:"introducer,attr"`
 	// SkipIntroductionRemovals bool              `json:"skipIntroductionRemovals" xml:"skipIntroductionRemovals,attr"`
-	IntroducedBy             protocol.DeviceID `json:"introducedBy" xml:"introducedBy,attr" nodefault:"true"`
+	IntroducedBy protocol.DeviceID `json:"introducedBy" xml:"introducedBy,attr" nodefault:"true"`
 	// Paused                   bool              `json:"paused" xml:"paused"`
 	// AllowedNetworks          []string          `json:"allowedNetworks" xml:"allowedNetwork,omitempty"`
 	// AutoAcceptFolders        bool              `json:"autoAcceptFolders" xml:"autoAcceptFolders"`
@@ -45,14 +45,14 @@ type DeviceConfiguration struct {
 }
 
 type FolderConfiguration struct {
-	ID                      string                      `json:"id" xml:"id,attr" nodefault:"true"`
-	Label                   string                      `json:"label" xml:"label,attr" restart:"false"`
+	ID    string `json:"id" xml:"id,attr" nodefault:"true"`
+	Label string `json:"label" xml:"label,attr" restart:"false"`
 	// FilesystemType          FilesystemType              `json:"filesystemType" xml:"filesystemType" default:"basic"`
 	// Path                    string                      `json:"path" xml:"path,attr"`
 	// Type                    FolderType                  `json:"type" xml:"type,attr"`
-	Devices                 []FolderDeviceConfiguration `json:"devices" xml:"device"`
-	// RescanIntervalS         int                         `json:"rescanIntervalS" xml:"rescanIntervalS,attr" default:"3600"`
-	// FSWatcherEnabled        bool                        `json:"fsWatcherEnabled" xml:"fsWatcherEnabled,attr" default:"true"`
+	Devices []FolderDeviceConfiguration `json:"devices" xml:"device"`
+	// RescanIntervalS         int                       `json:"rescanIntervalS" xml:"rescanIntervalS,attr" default:"3600"`
+	// FSWatcherEnabled        bool                    `json:"fsWatcherEnabled" xml:"fsWatcherEnabled,attr" default:"true"`
 	// FSWatcherDelayS         float64                     `json:"fsWatcherDelayS" xml:"fsWatcherDelayS,attr" default:"10"`
 	// FSWatcherTimeoutS       float64                     `json:"fsWatcherTimeoutS" xml:"fsWatcherTimeoutS,attr"`
 	// IgnorePerms             bool                        `json:"ignorePerms" xml:"ignorePerms,attr"`
@@ -74,10 +74,10 @@ type FolderConfiguration struct {
 	// MarkerName              string                      `json:"markerName" xml:"markerName"`
 	// CopyOwnershipFromParent bool                        `json:"copyOwnershipFromParent" xml:"copyOwnershipFromParent"`
 	// RawModTimeWindowS       int                         `json:"modTimeWindowS" xml:"modTimeWindowS"`
-	// MaxConcurrentWrites     int                         `json:"maxConcurrentWrites" xml:"maxConcurrentWrites" default:"2"`
+	// MaxConcurrentWrites     int                       `json:"maxConcurrentWrites" xml:"maxConcurrentWrites" default:"2"`
 	// DisableFsync            bool                        `json:"disableFsync" xml:"disableFsync"`
 	// BlockPullOrder          BlockPullOrder              `json:"blockPullOrder" xml:"blockPullOrder"`
-	// CopyRangeMethod         CopyRangeMethod             `json:"copyRangeMethod" xml:"copyRangeMethod" default:"standard"`
+	// CopyRangeMethod         CopyRangeMethod            `json:"copyRangeMethod" xml:"copyRangeMethod" default:"standard"`
 	// CaseSensitiveFS         bool                        `json:"caseSensitiveFS" xml:"caseSensitiveFS"`
 	// JunctionsAsDirs         bool                        `json:"junctionsAsDirs" xml:"junctionsAsDirs"`
 	// SyncOwnership           bool                        `json:"syncOwnership" xml:"syncOwnership"`
@@ -93,7 +93,7 @@ type FolderConfiguration struct {
 }
 
 type FolderDeviceConfiguration struct {
-	DeviceID           protocol.DeviceID `json:"deviceID" xml:"id,attr"`
-	IntroducedBy       protocol.DeviceID `json:"introducedBy" xml:"introducedBy,attr"`
+	DeviceID     protocol.DeviceID `json:"deviceID" xml:"id,attr"`
+	IntroducedBy protocol.DeviceID `json:"introducedBy" xml:"introducedBy,attr"`
 	// EncryptionPassword string            `json:"encryptionPassword" xml:"encryptionPassword"`
 }

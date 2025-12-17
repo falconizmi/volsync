@@ -6,13 +6,12 @@
 
 package config
 
-
 type GUIConfiguration struct {
 	// Enabled                   bool     `json:"enabled" xml:"enabled,attr" default:"true"`
 	// RawAddress                string   `json:"address" xml:"address" default:"127.0.0.1:8384"`
 	// RawUnixSocketPermissions  string   `json:"unixSocketPermissions" xml:"unixSocketPermissions,omitempty"`
-	User                      string   `json:"user" xml:"user,omitempty"`
-	Password                  string   `json:"password" xml:"password,omitempty"`
+	User     string `json:"user" xml:"user,omitempty"`
+	Password string `json:"password" xml:"password,omitempty"`
 	// AuthMode                  AuthMode `json:"authMode" xml:"authMode,omitempty"`
 	// MetricsWithoutAuth        bool     `json:"metricsWithoutAuth" xml:"metricsWithoutAuth" default:"false"`
 	// RawUseTLS                 bool     `json:"useTLS" xml:"tls,attr"`
