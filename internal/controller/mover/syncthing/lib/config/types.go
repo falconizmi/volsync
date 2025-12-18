@@ -48,7 +48,7 @@ type FolderConfiguration struct {
 	ID    string `json:"id" xml:"id,attr" nodefault:"true"`
 	Label string `json:"label" xml:"label,attr" restart:"false"`
 	// FilesystemType          FilesystemType              `json:"filesystemType" xml:"filesystemType" default:"basic"`
-	// Path                    string                      `json:"path" xml:"path,attr"`
+	Path string `json:"path" xml:"path,attr"`
 	// Type                    FolderType                  `json:"type" xml:"type,attr"`
 	Devices []FolderDeviceConfiguration `json:"devices" xml:"device"`
 	// RescanIntervalS         int                       `json:"rescanIntervalS" xml:"rescanIntervalS,attr" default:"3600"`
