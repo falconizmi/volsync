@@ -43,6 +43,7 @@ type FolderDeviceConfiguration struct {
 }
 
 type GUIConfiguration struct {
-	User     string `json:"user,omitempty"`
-	Password string `json:"password,omitempty"`
+	RawAddress string `json:"address,omitempty"`
+	User       string `json:"user,omitempty"`
+	Password   string `json:"password,omitempty"`
 }
