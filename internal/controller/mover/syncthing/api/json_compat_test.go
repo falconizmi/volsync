@@ -370,3 +370,298 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 		})
 	})
 })
+
+// These tests simulate the operator's actual code paths that modify the
+// Syncthing config between GET and PUT. They verify that fields not touched
+// by the operator survive the full modification cycle.
+var _ = Describe("Operator config modification flow", func() {
+	// Fixture representing config returned by syncthing on startup with config-template.xml.
+	// GUI password starts empty — this triggers the first-reconcile PUT (mover.go:752-756).
+	// Includes extra API fields our structs don't model (enabled, useTLS, apiKey, order,
+	// minDiskFree, versioning, compression, etc.) to verify unmarshal tolerates them.
+	const templateConfigJSON = `{
+		"version": 37,
+		"folders": [{
+			"id": "syncthing-folder-id",
+			"label": "synced volume",
+			"filesystemType": "basic",
+			"path": "/mover-syncthing/data",
+			"type": "sendreceive",
+			"devices": [
+				{
+					"deviceID": "ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4",
+					"introducedBy": ""
+				}
+			],
+			"rescanIntervalS": 3600,
+			"fsWatcherEnabled": true,
+			"fsWatcherDelayS": 10,
+			"ignorePerms": false,
+			"autoNormalize": true,
+			"maxConflicts": 10,
+			"disableSparseFiles": false,
+			"paused": false,
+			"markerName": ".stfolder",
+			"maxConcurrentWrites": 2,
+			"disableFsync": false,
+			"blockPullOrder": "standard",
+			"copyRangeMethod": "standard",
+			"caseSensitiveFS": false,
+			"junctionsAsDirs": false,
+			"order": "random",
+			"minDiskFree": {"value": 1, "unit": "%"},
+			"versioning": {"cleanupIntervalS": 3600}
+		}],
+		"devices": [{
+			"deviceID": "ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4",
+			"name": "mydevice",
+			"addresses": ["dynamic"],
+			"compression": "metadata",
+			"introducer": false,
+			"skipIntroductionRemovals": false,
+			"introducedBy": "",
+			"paused": false,
+			"autoAcceptFolders": false
+		}],
+		"gui": {
+			"enabled": true,
+			"address": "0.0.0.0:8384",
+			"user": "",
+			"password": "",
+			"useTLS": true,
+			"apiKey": "abc123"
+		}
+	}`
+
+	var (
+		myID, _  = protocol.DeviceIDFromString("ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4")
+		peer1, _ = protocol.DeviceIDFromString("AIR6LPZ-7K4PTTV-UXQSMUU-CPQ5YWH-OEDFIIQ-JUG777G-2YQXXR5-YD6AWQR")
+		peer2, _ = protocol.DeviceIDFromString("GYRZZQB-IRNPV4Z-T7TC52W-EQYJ3TT-FDQW6MW-DFLMU42-SSSU6EM-FBK2VAY")
+	)
+
+	It("preserves GUI address when setting credentials", func() {
+		// Simulates mover.go:752-756: on first reconcile, password is empty
+		// so the operator always sets GUI.User and GUI.Password.
+		// The GUI address (0.0.0.0:8384 from template) must not be lost,
+		// because syncthing's default is 127.0.0.1:8384.
+		var st Syncthing
+		err := json.Unmarshal([]byte(templateConfigJSON), &st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+
+		st.Configuration.GUI.User = "syncthing"
+		st.Configuration.GUI.Password = "$2a$10$hashedpassword"
+
+		data, err := json.Marshal(st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+
+		var raw map[string]json.RawMessage
+		err = json.Unmarshal(data, &raw)
+		Expect(err).NotTo(HaveOccurred())
+
+		var gui map[string]json.RawMessage
+		err = json.Unmarshal(raw["gui"], &gui)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(gui).To(HaveKey("address"))
+		var addr string
+		err = json.Unmarshal(gui["address"], &addr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(addr).To(Equal("0.0.0.0:8384"))
+	})
+
+	It("preserves folder config through ShareFoldersWithDevices", func() {
+		// ShareFoldersWithDevices (api/utils.go:51) copies each folder struct
+		// via Go assignment and resets only Devices. All other folder fields
+		// must survive because Go struct copy preserves all fields.
+		var st Syncthing
+		err := json.Unmarshal([]byte(templateConfigJSON), &st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+		st.SystemStatus.MyID = myID.GoString()
+
+		st.Configuration.Devices = append(st.Configuration.Devices, config.DeviceConfiguration{
+			DeviceID:   peer1,
+			Addresses:  []string{"tcp://1.2.3.4:22000"},
+			Introducer: false,
+		})
+
+		st.ShareFoldersWithDevices()
+
+		data, err := json.Marshal(st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+
+		var raw map[string]json.RawMessage
+		err = json.Unmarshal(data, &raw)
+		Expect(err).NotTo(HaveOccurred())
+
+		var folders []map[string]json.RawMessage
+		err = json.Unmarshal(raw["folders"], &folders)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(folders).To(HaveLen(1))
+		folder := folders[0]
+
+		// Folder must include new devices
+		var devices []json.RawMessage
+		err = json.Unmarshal(folder["devices"], &devices)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(devices).To(HaveLen(2)) // self + peer1
+
+		// Template values must survive ShareFoldersWithDevices
+		Expect(folder).To(HaveKey("fsWatcherEnabled"))
+		Expect(folder).To(HaveKey("rescanIntervalS"))
+		Expect(folder).To(HaveKey("autoNormalize"))
+		Expect(folder).To(HaveKey("maxConflicts"))
+		Expect(folder).To(HaveKey("maxConcurrentWrites"))
+		Expect(folder).To(HaveKey("fsWatcherDelayS"))
+
+		var fsWatcher bool
+		err = json.Unmarshal(folder["fsWatcherEnabled"], &fsWatcher)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(fsWatcher).To(BeTrue())
+
+		var rescan int
+		err = json.Unmarshal(folder["rescanIntervalS"], &rescan)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rescan).To(Equal(3600))
+
+		var path string
+		err = json.Unmarshal(folder["path"], &path)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(path).To(Equal("/mover-syncthing/data"))
+	})
+
+	It("preserves self-device config when adding peer devices", func() {
+		// updateSyncthingDevices (syncthing.go:34) keeps the self-device from
+		// the GET response and creates new DeviceConfiguration for peers with
+		// only DeviceID, Addresses, and Introducer.
+		var st Syncthing
+		err := json.Unmarshal([]byte(templateConfigJSON), &st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+		st.SystemStatus.MyID = myID.GoString()
+
+		// Simulate updateSyncthingDevices: keep self, add peer
+		selfDevice := st.Configuration.Devices[0]
+		st.Configuration.Devices = []config.DeviceConfiguration{
+			selfDevice,
+			{DeviceID: peer1, Addresses: []string{"tcp://1.2.3.4:22000"}, Introducer: false},
+		}
+
+		data, err := json.Marshal(st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+
+		var raw map[string]json.RawMessage
+		err = json.Unmarshal(data, &raw)
+		Expect(err).NotTo(HaveOccurred())
+
+		var devices []map[string]json.RawMessage
+		err = json.Unmarshal(raw["devices"], &devices)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(devices).To(HaveLen(2))
+
+		// Self-device preserves its original fields from the GET response
+		var selfName string
+		err = json.Unmarshal(devices[0]["name"], &selfName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(selfName).To(Equal("mydevice"))
+
+		var selfAddrs []string
+		err = json.Unmarshal(devices[0]["addresses"], &selfAddrs)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(selfAddrs).To(ConsistOf("dynamic"))
+
+		// Peer device has the fields we set
+		Expect(devices[1]).To(HaveKey("deviceID"))
+		var peerAddrs []string
+		err = json.Unmarshal(devices[1]["addresses"], &peerAddrs)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(peerAddrs).To(ConsistOf("tcp://1.2.3.4:22000"))
+	})
+
+	It("full operator first-reconcile preserves all critical config", func() {
+		// Complete simulation of the operator's first reconcile:
+		//   1. GET /rest/config → unmarshal
+		//   2. updateSyncthingDevices → keep self, add 2 peers
+		//   3. ShareFoldersWithDevices → share folder with all devices
+		//   4. setGUICredentials → set User + Password
+		//   5. marshal → PUT /rest/config
+		var st Syncthing
+		err := json.Unmarshal([]byte(templateConfigJSON), &st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+		st.SystemStatus.MyID = myID.GoString()
+
+		// Step 2: updateSyncthingDevices
+		selfDevice := st.Configuration.Devices[0]
+		st.Configuration.Devices = []config.DeviceConfiguration{
+			selfDevice,
+			{DeviceID: peer1, Addresses: []string{"tcp://1.2.3.4:22000"}, Introducer: false},
+			{DeviceID: peer2, Addresses: []string{"tcp://5.6.7.8:22000"}, Introducer: false},
+		}
+
+		// Step 3: ShareFoldersWithDevices
+		st.ShareFoldersWithDevices()
+
+		// Step 4: setGUICredentials
+		st.Configuration.GUI.User = "syncthing"
+		st.Configuration.GUI.Password = "$2a$10$hashedpassword"
+
+		// Step 5: marshal (this is the JSON body of PUT /rest/config)
+		data, err := json.Marshal(st.Configuration)
+		Expect(err).NotTo(HaveOccurred())
+
+		var raw map[string]json.RawMessage
+		err = json.Unmarshal(data, &raw)
+		Expect(err).NotTo(HaveOccurred())
+
+		// --- GUI: address must survive ---
+		var gui map[string]json.RawMessage
+		err = json.Unmarshal(raw["gui"], &gui)
+		Expect(err).NotTo(HaveOccurred())
+
+		var addr string
+		err = json.Unmarshal(gui["address"], &addr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(addr).To(Equal("0.0.0.0:8384"), "GUI address must survive full operator flow")
+
+		var user string
+		err = json.Unmarshal(gui["user"], &user)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(user).To(Equal("syncthing"))
+
+		// --- Devices: self + 2 peers ---
+		var devices []map[string]json.RawMessage
+		err = json.Unmarshal(raw["devices"], &devices)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(devices).To(HaveLen(3))
+
+		// --- Folders: all 3 devices shared, template values preserved ---
+		var folders []map[string]json.RawMessage
+		err = json.Unmarshal(raw["folders"], &folders)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(folders).To(HaveLen(1))
+		folder := folders[0]
+
+		var folderDevices []json.RawMessage
+		err = json.Unmarshal(folder["devices"], &folderDevices)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(folderDevices).To(HaveLen(3))
+
+		Expect(folder).To(HaveKey("fsWatcherEnabled"))
+		Expect(folder).To(HaveKey("rescanIntervalS"))
+		Expect(folder).To(HaveKey("autoNormalize"))
+		Expect(folder).To(HaveKey("maxConflicts"))
+
+		var fsWatcher bool
+		err = json.Unmarshal(folder["fsWatcherEnabled"], &fsWatcher)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(fsWatcher).To(BeTrue())
+
+		var rescan int
+		err = json.Unmarshal(folder["rescanIntervalS"], &rescan)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rescan).To(Equal(3600))
+
+		var path string
+		err = json.Unmarshal(folder["path"], &path)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(path).To(Equal("/mover-syncthing/data"))
+	})
+})
