@@ -6,9 +6,11 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/protocol"
 )
 
 // These tests validate that our struct JSON tags match the actual Syncthing REST API
@@ -87,8 +89,7 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 			Expect(cfg.Devices[0].DeviceID.GoString()).To(Equal(
 				"P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2"))
 			Expect(cfg.Devices[0].Introducer).To(BeFalse())
-			Expect(cfg.Devices[0].IntroducedBy).To(Equal(
-				cfg.Devices[0].IntroducedBy)) // empty DeviceID
+			Expect(cfg.Devices[0].IntroducedBy).To(Equal(protocol.EmptyDeviceID))
 
 			// Folders
 			Expect(cfg.Folders).To(HaveLen(1))
