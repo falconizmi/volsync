@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/syncthing/syncthing/lib/config"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
 )
 
 // Defines endpoints for the Syncthing API

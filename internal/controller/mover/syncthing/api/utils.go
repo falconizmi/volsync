@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/syncthing/syncthing/lib/config"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
 )
 
 // GetDeviceFromID Returns a pointer to the device with the given ID,
