@@ -31,10 +31,27 @@ type DeviceConfiguration struct {
 }
 
 type FolderConfiguration struct {
-	ID      string                      `json:"id"`
-	Label   string                      `json:"label"`
-	Path    string                      `json:"path"`
-	Devices []FolderDeviceConfiguration `json:"devices"`
+	ID                  string                      `json:"id"`
+	Label               string                      `json:"label"`
+	FilesystemType      string                      `json:"filesystemType,omitempty"`
+	Path                string                      `json:"path"`
+	Type                string                      `json:"type,omitempty"`
+	Devices             []FolderDeviceConfiguration `json:"devices"`
+	RescanIntervalS     int                         `json:"rescanIntervalS"`
+	FSWatcherEnabled    bool                        `json:"fsWatcherEnabled"`
+	FSWatcherDelayS     float64                     `json:"fsWatcherDelayS"`
+	IgnorePerms         bool                        `json:"ignorePerms"`
+	AutoNormalize       bool                        `json:"autoNormalize"`
+	MaxConflicts        int                         `json:"maxConflicts"`
+	DisableSparseFiles  bool                        `json:"disableSparseFiles"`
+	Paused              bool                        `json:"paused"`
+	MarkerName          string                      `json:"markerName,omitempty"`
+	MaxConcurrentWrites int                         `json:"maxConcurrentWrites"`
+	DisableFsync        bool                        `json:"disableFsync"`
+	BlockPullOrder      string                      `json:"blockPullOrder,omitempty"`
+	CopyRangeMethod     string                      `json:"copyRangeMethod,omitempty"`
+	CaseSensitiveFS     bool                        `json:"caseSensitiveFS"`
+	JunctionsAsDirs     bool                        `json:"junctionsAsDirs"`
 }
 
 type FolderDeviceConfiguration struct {
