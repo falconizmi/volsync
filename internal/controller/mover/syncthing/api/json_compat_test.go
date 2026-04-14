@@ -446,6 +446,19 @@ var _ = Describe("Operator config modification flow", func() {
 		err = json.Unmarshal(gui["address"], &addr)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(addr).To(Equal("0.0.0.0:8384"))
+
+		// GUI extras (fields not in our struct) must survive credential changes
+		var enabled bool
+		err = json.Unmarshal(gui["enabled"], &enabled)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(enabled).To(BeTrue())
+
+		var useTLS bool
+		err = json.Unmarshal(gui["useTLS"], &useTLS)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(useTLS).To(BeTrue())
+
+		Expect(gui).To(HaveKey("apiKey"))
 	})
 
 	It("preserves folder config through ShareFoldersWithDevices", func() {
