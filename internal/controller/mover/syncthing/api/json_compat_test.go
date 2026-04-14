@@ -143,6 +143,135 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 		})
 	})
 
+	// This test verifies that when our structs roundtrip through unmarshal→marshal
+	// (simulating the operator's GET→modify→PUT flow), critical config fields are
+	// preserved in the output JSON. Syncthing does apply struct-tag defaults for
+	// missing fields, but if those defaults ever change or if we add fields whose
+	// defaults differ from the template, this test will catch it.
+	Describe("PUT /rest/config roundtrip preserves critical fields", func() {
+		// This fixture represents a realistic config as returned by syncthing,
+		// including the GUI address set by the config template to 0.0.0.0:8384
+		// and folder settings from the template.
+		const fullConfigJSON = `{
+			"version": 37,
+			"folders": [{
+				"id": "syncthing-folder-id",
+				"label": "synced volume",
+				"filesystemType": "basic",
+				"path": "/mover-syncthing/data",
+				"type": "sendreceive",
+				"devices": [
+					{
+						"deviceID": "P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2",
+						"introducedBy": ""
+					}
+				],
+				"rescanIntervalS": 3600,
+				"fsWatcherEnabled": true,
+				"fsWatcherDelayS": 10,
+				"ignorePerms": false,
+				"autoNormalize": true,
+				"maxConflicts": 10,
+				"disableSparseFiles": false,
+				"paused": false,
+				"markerName": ".stfolder",
+				"maxConcurrentWrites": 2,
+				"disableFsync": false,
+				"blockPullOrder": "standard",
+				"copyRangeMethod": "standard",
+				"caseSensitiveFS": false,
+				"junctionsAsDirs": false,
+				"order": "random",
+				"minDiskFree": {"value": 1, "unit": "%"},
+				"versioning": {"cleanupIntervalS": 3600}
+			}],
+			"devices": [{
+				"deviceID": "P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2",
+				"name": "mydevice",
+				"addresses": ["dynamic"],
+				"introducer": false,
+				"introducedBy": ""
+			}],
+			"gui": {
+				"enabled": true,
+				"address": "0.0.0.0:8384",
+				"user": "admin",
+				"password": "$2a$10$abcdefghijklmnopqrstuv",
+				"useTLS": true,
+				"apiKey": "abc123"
+			}
+		}`
+
+		It("preserves GUI address through roundtrip", func() {
+			// This is the proven bug: the config template sets 0.0.0.0:8384
+			// but syncthing's default is 127.0.0.1:8384. If our struct drops
+			// the address field, syncthing rebinds to localhost only.
+			var cfg config.Configuration
+			err := json.Unmarshal([]byte(fullConfigJSON), &cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			data, err := json.Marshal(cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			var raw map[string]json.RawMessage
+			err = json.Unmarshal(data, &raw)
+			Expect(err).NotTo(HaveOccurred())
+
+			var gui map[string]json.RawMessage
+			err = json.Unmarshal(raw["gui"], &gui)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(gui).To(HaveKey("address"), "GUI address must survive roundtrip")
+			var addr string
+			err = json.Unmarshal(gui["address"], &addr)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(addr).To(Equal("0.0.0.0:8384"))
+		})
+
+		It("preserves folder config template values through roundtrip", func() {
+			var cfg config.Configuration
+			err := json.Unmarshal([]byte(fullConfigJSON), &cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			data, err := json.Marshal(cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			var raw map[string]json.RawMessage
+			err = json.Unmarshal(data, &raw)
+			Expect(err).NotTo(HaveOccurred())
+
+			var folders []map[string]json.RawMessage
+			err = json.Unmarshal(raw["folders"], &folders)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(folders).To(HaveLen(1))
+			folder := folders[0]
+
+			// These fields are critical for file change detection.
+			// Without them, syncthing falls back to struct-tag defaults
+			// which currently match the template — but if defaults change
+			// in a future syncthing version, the operator would silently
+			// push wrong values.
+			Expect(folder).To(HaveKey("fsWatcherEnabled"))
+			Expect(folder).To(HaveKey("rescanIntervalS"))
+
+			var fsWatcher bool
+			err = json.Unmarshal(folder["fsWatcherEnabled"], &fsWatcher)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fsWatcher).To(BeTrue())
+
+			var rescanInterval int
+			err = json.Unmarshal(folder["rescanIntervalS"], &rescanInterval)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rescanInterval).To(Equal(3600))
+
+			// Other template values that should survive
+			Expect(folder).To(HaveKey("autoNormalize"))
+			Expect(folder).To(HaveKey("maxConflicts"))
+			Expect(folder).To(HaveKey("maxConcurrentWrites"))
+			Expect(folder).To(HaveKey("fsWatcherDelayS"))
+		})
+	})
+
 	Describe("GET /rest/system/status", func() {
 		const systemStatusJSON = `{
 			"alloc": 30618136,
