@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+
 	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
 )
 
