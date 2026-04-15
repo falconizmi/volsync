@@ -416,6 +416,11 @@ var _ = Describe("Operator config modification flow", func() {
 		}
 	}`
 
+	const (
+		testGUIUser     = "syncthing"
+		testGUIPassword = "$2a$10$hashedpassword"
+	)
+
 	var (
 		myID, _  = protocol.DeviceIDFromString("ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4")
 		peer1, _ = protocol.DeviceIDFromString("AIR6LPZ-7K4PTTV-UXQSMUU-CPQ5YWH-OEDFIIQ-JUG777G-2YQXXR5-YD6AWQR")
@@ -427,8 +432,8 @@ var _ = Describe("Operator config modification flow", func() {
 		err := json.Unmarshal([]byte(templateConfigJSON), &st.Configuration)
 		Expect(err).NotTo(HaveOccurred())
 
-		st.Configuration.GUI.User = "syncthing"
-		st.Configuration.GUI.Password = "$2a$10$hashedpassword"
+		st.Configuration.GUI.User = testGUIUser
+		st.Configuration.GUI.Password = testGUIPassword
 
 		data, err := json.Marshal(st.Configuration)
 		Expect(err).NotTo(HaveOccurred())
@@ -579,8 +584,8 @@ var _ = Describe("Operator config modification flow", func() {
 		st.ShareFoldersWithDevices()
 
 		// Step 3: setGUICredentials
-		st.Configuration.GUI.User = "syncthing"
-		st.Configuration.GUI.Password = "$2a$10$hashedpassword"
+		st.Configuration.GUI.User = testGUIUser
+		st.Configuration.GUI.Password = testGUIPassword
 
 		// Step 4: marshal (PUT /rest/config body)
 		data, err := json.Marshal(st.Configuration)
@@ -603,7 +608,7 @@ var _ = Describe("Operator config modification flow", func() {
 		var user string
 		err = json.Unmarshal(gui["user"], &user)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(user).To(Equal("syncthing"))
+		Expect(user).To(Equal(testGUIUser))
 
 		// --- Devices: self + 2 peers ---
 		var devices []map[string]json.RawMessage
@@ -669,8 +674,8 @@ var _ = Describe("Operator config modification flow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// Operator modifies GUI credentials (triggers PUT)
-		cfg.GUI.User = "syncthing"
-		cfg.GUI.Password = "$2a$10$hashedpassword"
+		cfg.GUI.User = testGUIUser
+		cfg.GUI.Password = testGUIPassword
 
 		data, err := json.Marshal(cfg)
 		Expect(err).NotTo(HaveOccurred())
