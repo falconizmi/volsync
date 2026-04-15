@@ -20,46 +20,11 @@ package syncthing
 
 import (
 	"crypto/rand"
-	"fmt"
 	"regexp"
 
 	"github.com/backube/volsync/api/v1alpha1"
 	"github.com/backube/volsync/internal/controller/mover/syncthing/api"
-	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
-	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/protocol"
 )
-
-// updateSyncthingDevices Updates the Syncthing's connected devices with the provided peerList.
-// An error may be encountered when reading the DeviceID from a string.
-func updateSyncthingDevices(peerList []v1alpha1.SyncthingPeer,
-	syncthing *api.Syncthing) error {
-	if syncthing == nil {
-		return fmt.Errorf("syncthing cannot be nil")
-	}
-	newDevices := []config.DeviceConfiguration{}
-	// add myself and introduced devices to the device list
-	for _, device := range syncthing.Configuration.Devices {
-		if device.DeviceID.GoString() == syncthing.MyID() || device.IntroducedBy.GoString() != "" {
-			newDevices = append(newDevices, device)
-		}
-	}
-	// Add the devices from the peerList to the device list
-	for _, device := range peerList {
-		deviceID, err := protocol.DeviceIDFromString(device.ID)
-		if err != nil {
-			return err
-		}
-		stDeviceToAdd := config.DeviceConfiguration{
-			DeviceID:   deviceID,
-			Addresses:  []string{device.Address},
-			Introducer: device.Introducer,
-		}
-		newDevices = append(newDevices, stDeviceToAdd)
-	}
-	syncthing.Configuration.Devices = newDevices
-	syncthing.ShareFoldersWithDevices()
-	return nil
-}
 
 // syncthingNeedsReconfigure Determines whether the given nodeList differs from Syncthing's internal devices,
 // and returns 'true' if the Syncthing API must be reconfigured, 'false' otherwise.
