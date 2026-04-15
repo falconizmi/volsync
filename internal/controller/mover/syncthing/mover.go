@@ -725,7 +725,7 @@ func (m *Mover) validatePeerList() error {
 // If there is no User/Password set on the object, or a user is set but doesn't match the value in the secret,
 // then ensureIsConfigured will update the Syncthing state to match the values in the secret.
 //
-//nolint:cyclop
+//nolint:cyclop,funlen
 func (m *Mover) ensureIsConfigured(apiSecret *corev1.Secret, syncthing *api.Syncthing) error {
 	// nil check
 	if apiSecret == nil || syncthing == nil {
