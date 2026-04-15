@@ -417,8 +417,8 @@ var _ = Describe("Operator config modification flow", func() {
 	}`
 
 	const (
-		testGUIUser     = "syncthing"
-		testGUIPassword = "$2a$10$hashedpassword"
+		testGUIUser       = "syncthing"
+		testGUIPasswdHash = "$2a$10$hashedpassword" //nolint:gosec // test fixture, not a real credential
 	)
 
 	var (
@@ -433,7 +433,7 @@ var _ = Describe("Operator config modification flow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		st.Configuration.GUI.User = testGUIUser
-		st.Configuration.GUI.Password = testGUIPassword
+		st.Configuration.GUI.Password = testGUIPasswdHash
 
 		data, err := json.Marshal(st.Configuration)
 		Expect(err).NotTo(HaveOccurred())
@@ -585,7 +585,7 @@ var _ = Describe("Operator config modification flow", func() {
 
 		// Step 3: setGUICredentials
 		st.Configuration.GUI.User = testGUIUser
-		st.Configuration.GUI.Password = testGUIPassword
+		st.Configuration.GUI.Password = testGUIPasswdHash
 
 		// Step 4: marshal (PUT /rest/config body)
 		data, err := json.Marshal(st.Configuration)
@@ -675,7 +675,7 @@ var _ = Describe("Operator config modification flow", func() {
 
 		// Operator modifies GUI credentials (triggers PUT)
 		cfg.GUI.User = testGUIUser
-		cfg.GUI.Password = testGUIPassword
+		cfg.GUI.Password = testGUIPasswdHash
 
 		data, err := json.Marshal(cfg)
 		Expect(err).NotTo(HaveOccurred())
