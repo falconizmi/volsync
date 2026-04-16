@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
-	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/protocol"
 )
 
 // These tests validate that our struct JSON tags match the actual Syncthing REST API
@@ -80,16 +79,14 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 			err := json.Unmarshal([]byte(configJSON), &cfg)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cfg.Version).To(Equal(37))
-
 			// Devices
 			Expect(cfg.Devices).To(HaveLen(1))
 			Expect(cfg.Devices[0].Name).To(Equal("node1"))
 			Expect(cfg.Devices[0].Addresses).To(ConsistOf("dynamic"))
-			Expect(cfg.Devices[0].DeviceID.GoString()).To(Equal(
+			Expect(cfg.Devices[0].DeviceID).To(Equal(
 				"P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2"))
 			Expect(cfg.Devices[0].Introducer).To(BeFalse())
-			Expect(cfg.Devices[0].IntroducedBy).To(Equal(protocol.EmptyDeviceID))
+			Expect(cfg.Devices[0].IntroducedBy).To(Equal(""))
 
 			// Folders
 			Expect(cfg.Folders).To(HaveLen(1))
@@ -97,7 +94,7 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 			Expect(cfg.Folders[0].Label).To(Equal("Default Folder"))
 			Expect(cfg.Folders[0].Path).To(Equal("/data"))
 			Expect(cfg.Folders[0].Devices).To(HaveLen(1))
-			Expect(cfg.Folders[0].Devices[0].DeviceID.GoString()).To(Equal(
+			Expect(cfg.Folders[0].Devices[0].DeviceID).To(Equal(
 				"P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2"))
 
 			// GUI
@@ -117,7 +114,6 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 			err = json.Unmarshal(data, &cfg2)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cfg2.Version).To(Equal(cfg.Version))
 			Expect(cfg2.Devices).To(HaveLen(len(cfg.Devices)))
 			Expect(cfg2.Folders).To(HaveLen(len(cfg.Folders)))
 			Expect(cfg2.Devices[0].DeviceID).To(Equal(cfg.Devices[0].DeviceID))
@@ -136,7 +132,6 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify top-level field names match Syncthing API
-			Expect(raw).To(HaveKey("version"))
 			Expect(raw).To(HaveKey("folders"))
 			Expect(raw).To(HaveKey("devices"))
 			Expect(raw).To(HaveKey("gui"))
@@ -172,26 +167,13 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 			"uptime": 3600
 		}`
 
-		It("unmarshals into our SystemStatus struct", func() {
+		It("unmarshals into our SystemStatus struct extracting myID", func() {
 			var status SystemStatus
 			err := json.Unmarshal([]byte(systemStatusJSON), &status)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(status.MyID).To(Equal(
 				"P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2"))
-			Expect(status.Alloc).To(Equal(30618136))
-			Expect(status.CPUPercent).To(Equal(2))
-			Expect(status.Goroutines).To(Equal(49))
-
-			// ConnectionServiceStatus
-			Expect(status.ConnectionServiceStatus).To(HaveKey("tcp://0.0.0.0:22000"))
-			entry := status.ConnectionServiceStatus["tcp://0.0.0.0:22000"]
-			Expect(entry.LANAddresses).To(ConsistOf("tcp://192.168.1.2:22000"))
-			Expect(entry.WANAddresses).To(ConsistOf("tcp://1.2.3.4:22000"))
-
-			// LastDialStatus
-			Expect(status.LastDialStatus).To(HaveKey("tcp://192.168.1.3:22000"))
-			Expect(status.LastDialStatus["tcp://192.168.1.3:22000"].OK).To(BeTrue())
 		})
 	})
 
@@ -223,21 +205,12 @@ var _ = Describe("JSON compatibility with Syncthing REST API", func() {
 			err := json.Unmarshal([]byte(connectionsJSON), &conn)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Total stats
-			Expect(conn.Total.At).To(Equal("2015-11-07T17:29:47.691637262+01:00"))
-			Expect(conn.Total.InBytesTotal).To(Equal(1479))
-			Expect(conn.Total.OutBytesTotal).To(Equal(1318))
-
 			// Per-device connection
 			deviceKey := "YZJBJFX-RDBL7WY-6ZGKJ2D-4MJB4E7-ZATSDUY-LD6Y3L3-MLFUYWE-AEMXJAC"
 			Expect(conn.Connections).To(HaveKey(deviceKey))
 			c := conn.Connections[deviceKey]
 			Expect(c.Connected).To(BeTrue())
-			Expect(c.Paused).To(BeFalse())
-			Expect(c.ClientVersion).To(Equal("v1.30.0"))
 			Expect(c.Address).To(Equal("127.0.0.1:22002"))
-			Expect(c.Type).To(Equal("tcp-client"))
-			Expect(c.StartedAt).To(Equal("2015-11-07T00:09:47Z"))
 		})
 	})
 })

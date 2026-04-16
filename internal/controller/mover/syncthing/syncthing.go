@@ -61,12 +61,12 @@ func syncthingNeedsReconfigure(
 	// add the rest of devices to the map
 	for _, device := range syncthing.Configuration.Devices {
 		// ignore self and introduced devices
-		if device.DeviceID.GoString() == syncthing.MyID() || device.IntroducedBy.GoString() != "" {
+		if device.DeviceID == syncthing.MyID() || device.IntroducedBy != "" {
 			continue
 		}
 
-		currentDevs[device.DeviceID.GoString()] = v1alpha1.SyncthingPeer{
-			ID:      device.DeviceID.GoString(),
+		currentDevs[device.DeviceID] = v1alpha1.SyncthingPeer{
+			ID:      device.DeviceID,
 			Address: device.Addresses[0],
 		}
 	}
