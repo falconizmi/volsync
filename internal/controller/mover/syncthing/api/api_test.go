@@ -20,11 +20,11 @@ var _ = Describe("Syncthing connection", func() {
 
 		When("Syncthing server exists", func() {
 			var (
-				ts          *httptest.Server
-				serverState *Syncthing
-				myID        = "ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4"
-				device1     = "AIR6LPZ-7K4PTTV-UXQSMUU-CPQ5YWH-OEDFIIQ-JUG777G-2YQXXR5-YD6AWQR"
-				device2     = "GYRZZQB-IRNPV4Z-T7TC52W-EQYJ3TT-FDQW6MW-DFLMU42-SSSU6EM-FBK2VAY"
+				ts           *httptest.Server
+				serverState  *Syncthing
+				myID         = "ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4"
+				device1      = "AIR6LPZ-7K4PTTV-UXQSMUU-CPQ5YWH-OEDFIIQ-JUG777G-2YQXXR5-YD6AWQR"
+				device2      = "GYRZZQB-IRNPV4Z-T7TC52W-EQYJ3TT-FDQW6MW-DFLMU42-SSSU6EM-FBK2VAY"
 				serverAPIKey = "0xDEADBEEF"
 			)
 
