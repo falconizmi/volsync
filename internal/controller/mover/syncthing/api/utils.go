@@ -34,7 +34,7 @@ import (
 // along with a boolean indicating whether the device was found.
 func (s *Syncthing) GetDeviceFromID(id string) (*config.DeviceConfiguration, bool) {
 	for _, device := range s.Configuration.Devices {
-		if device.DeviceID.GoString() == id {
+		if device.DeviceID == id {
 			return &device, true
 		}
 	}
@@ -57,12 +57,9 @@ func CreateSyncthingTestServer(state *Syncthing, serverAPIKey string) *httptest.
 		connections := make(map[string]ConnectionStats, 0)
 		for _, device := range s.Configuration.Devices {
 			if len(device.Addresses) > 0 {
-				connections[device.DeviceID.GoString()] = ConnectionStats{
-					Connected:     true,
-					Paused:        false,
-					Address:       device.Addresses[0],
-					Type:          "TCP",
-					ClientVersion: "v1.0.0",
+				connections[device.DeviceID] = ConnectionStats{
+					Connected: true,
+					Address:   device.Addresses[0],
 				}
 			}
 		}
@@ -89,7 +86,7 @@ func CreateSyncthingTestServer(state *Syncthing, serverAPIKey string) *httptest.
 			// Update existing or append new
 			found := false
 			for i, d := range state.Configuration.Devices {
-				if d.DeviceID.GoString() == device.DeviceID.GoString() {
+				if d.DeviceID == device.DeviceID {
 					state.Configuration.Devices[i] = device
 					found = true
 					break
@@ -107,7 +104,7 @@ func CreateSyncthingTestServer(state *Syncthing, serverAPIKey string) *httptest.
 			deviceID := strings.TrimPrefix(path, ConfigDevicesEndpoint+"/")
 			newDevices := make([]config.DeviceConfiguration, 0, len(state.Configuration.Devices))
 			for _, d := range state.Configuration.Devices {
-				if d.DeviceID.GoString() != deviceID {
+				if d.DeviceID != deviceID {
 					newDevices = append(newDevices, d)
 				}
 			}

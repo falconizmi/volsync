@@ -44,7 +44,6 @@ import (
 	"github.com/backube/volsync/internal/controller/mover"
 	"github.com/backube/volsync/internal/controller/mover/syncthing/api"
 	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
-	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/protocol"
 	"github.com/backube/volsync/internal/controller/utils"
 	"github.com/backube/volsync/internal/controller/volumehandler"
 )
@@ -114,7 +113,6 @@ type Mover struct {
 	configStorageClass  *string
 	configAccessModes   []corev1.PersistentVolumeAccessMode
 	containerImage      string
-	paused              bool
 	dataPVCName         *string
 	peerList            []volsyncv1alpha1.SyncthingPeer
 	status              *volsyncv1alpha1.ReplicationSourceSyncthingStatus
@@ -753,12 +751,11 @@ func (m *Mover) ensureIsConfigured(apiSecret *corev1.Secret, syncthing *api.Sync
 
 		// Remove stale devices (not self, not introduced, not in peerList)
 		for _, device := range syncthing.Configuration.Devices {
-			id := device.DeviceID.GoString()
-			if id == syncthing.MyID() || device.IntroducedBy.GoString() != "" {
+			if device.DeviceID == syncthing.MyID() || device.IntroducedBy != "" {
 				continue
 			}
-			if _, wanted := desiredPeers[id]; !wanted {
-				if err := m.syncthingConnection.RemoveDevice(id); err != nil {
+			if _, wanted := desiredPeers[device.DeviceID]; !wanted {
+				if err := m.syncthingConnection.RemoveDevice(device.DeviceID); err != nil {
 					return err
 				}
 			}
@@ -766,12 +763,8 @@ func (m *Mover) ensureIsConfigured(apiSecret *corev1.Secret, syncthing *api.Sync
 
 		// Add/update devices from peerList
 		for _, peer := range m.peerList {
-			deviceID, err := protocol.DeviceIDFromString(peer.ID)
-			if err != nil {
-				return err
-			}
 			if err := m.syncthingConnection.AddOrUpdateDevice(config.DeviceConfiguration{
-				DeviceID:   deviceID,
+				DeviceID:   peer.ID,
 				Addresses:  []string{peer.Address},
 				Introducer: peer.Introducer,
 			}); err != nil {
@@ -780,11 +773,11 @@ func (m *Mover) ensureIsConfigured(apiSecret *corev1.Secret, syncthing *api.Sync
 		}
 
 		// Build folder device list: self + introduced + peerList
-		folderDevices := []config.FolderDeviceConfiguration{}
-		selfID, _ := protocol.DeviceIDFromString(syncthing.MyID())
-		folderDevices = append(folderDevices, config.FolderDeviceConfiguration{DeviceID: selfID})
+		folderDevices := []config.FolderDeviceConfiguration{
+			{DeviceID: syncthing.MyID()},
+		}
 		for _, device := range syncthing.Configuration.Devices {
-			if device.IntroducedBy.GoString() != "" {
+			if device.IntroducedBy != "" {
 				folderDevices = append(folderDevices, config.FolderDeviceConfiguration{
 					DeviceID:     device.DeviceID,
 					IntroducedBy: device.IntroducedBy,
@@ -792,8 +785,7 @@ func (m *Mover) ensureIsConfigured(apiSecret *corev1.Secret, syncthing *api.Sync
 			}
 		}
 		for _, peer := range m.peerList {
-			deviceID, _ := protocol.DeviceIDFromString(peer.ID)
-			folderDevices = append(folderDevices, config.FolderDeviceConfiguration{DeviceID: deviceID})
+			folderDevices = append(folderDevices, config.FolderDeviceConfiguration{DeviceID: peer.ID})
 		}
 
 		// Update folder sharing
@@ -876,16 +868,14 @@ func (m *Mover) getConnectedPeers(syncthing *api.Syncthing) []volsyncv1alpha1.Sy
 		//  - https://docs.syncthing.net/rest/system-connections-get.html
 		//  - https://forum.syncthing.net/t/specifying-protocols-without-global-announce-or-relay/18565
 		tcpAddress := asTCPAddress(connectionInfo.Address)
-		introducedBy := device.IntroducedBy
-		deviceName := device.Name
 
 		// check connection status
 		connectedPeers = append(connectedPeers, volsyncv1alpha1.SyncthingPeerStatus{
 			ID:           deviceID,
 			Address:      tcpAddress,
 			Connected:    connectionInfo.Connected,
-			Name:         deviceName,
-			IntroducedBy: introducedBy.GoString(),
+			Name:         device.Name,
+			IntroducedBy: device.IntroducedBy,
 		})
 	}
 	return connectedPeers

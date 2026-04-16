@@ -71,7 +71,7 @@ func (s *syncthingAPIConnection) Fetch() (*Syncthing, error) {
 // AddOrUpdateDevice adds or updates a single device via POST /rest/config/devices.
 // Syncthing fills in defaults for any fields not provided.
 func (s *syncthingAPIConnection) AddOrUpdateDevice(device config.DeviceConfiguration) error {
-	s.logger.Info("Adding/updating Syncthing device", "deviceID", device.DeviceID.GoString())
+	s.logger.Info("Adding/updating Syncthing device", "deviceID", device.DeviceID)
 	_, err := s.jsonRequest(ConfigDevicesEndpoint, "POST", device)
 	if err != nil {
 		s.logger.Error(err, "Failed to add/update device")
