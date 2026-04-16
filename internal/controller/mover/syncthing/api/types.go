@@ -24,8 +24,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	"github.com/syncthing/syncthing/lib/config"
-	"github.com/syncthing/syncthing/lib/connections"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
 )
 
 // DialStatus Provides us with information as to whether or not we are able to
@@ -39,14 +38,13 @@ type DialStatus struct {
 // SystemStatus Details information about the running Syncthing system, including the
 // device ID, CPU usage, allocated memory, number of goroutines, when it started, and so on and so forth.
 type SystemStatus struct {
-	Alloc                   int                                        `json:"alloc"`
-	ConnectionServiceStatus map[string]connections.ListenerStatusEntry `json:"connectionServiceStatus"`
-	CPUPercent              int                                        `json:"cpuPercent"`
-	Goroutines              int                                        `json:"goroutines"`
-	GUIAddressOverridden    bool                                       `json:"guiAddressOverridden"`
-	GUIAddressUsed          string                                     `json:"guiAddressUsed"`
-	LastDialStatus          map[string]DialStatus                      `json:"lastDialStatus"`
-	MyID                    string                                     `json:"myID"`
+	Alloc                int                   `json:"alloc"`
+	CPUPercent           int                   `json:"cpuPercent"`
+	Goroutines           int                   `json:"goroutines"`
+	GUIAddressOverridden bool                  `json:"guiAddressOverridden"`
+	GUIAddressUsed       string                `json:"guiAddressUsed"`
+	LastDialStatus       map[string]DialStatus `json:"lastDialStatus"`
+	MyID                 string                `json:"myID"`
 }
 
 // TotalStats Describes the total traffic to/from a given Syncthing node.

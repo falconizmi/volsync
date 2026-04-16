@@ -10,8 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/syncthing/syncthing/lib/config"
-	"github.com/syncthing/syncthing/lib/protocol"
+	"github.com/backube/volsync/internal/controller/mover/syncthing/lib/config"
 )
 
 var _ = Describe("Syncthing connection", func() {
@@ -22,9 +21,7 @@ var _ = Describe("Syncthing connection", func() {
 			var (
 				ts          *httptest.Server
 				serverState *Syncthing
-				myID, _     = protocol.DeviceIDFromString(
-					"ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4",
-				)
+				myID         = "ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4"
 				serverAPIKey = "0xDEADBEEF"
 			)
 
@@ -35,7 +32,7 @@ var _ = Describe("Syncthing connection", func() {
 			JustBeforeEach(func() {
 				// set a value in each field
 				serverState.Configuration.Version = 10
-				serverState.SystemStatus.MyID = myID.GoString()
+				serverState.SystemStatus.MyID = myID
 				serverState.SystemConnections.Total = TotalStats{At: "test"}
 
 				ts = CreateSyncthingTestServer(serverState, serverAPIKey)
@@ -66,7 +63,7 @@ var _ = Describe("Syncthing connection", func() {
 
 					// ensure that we fetched the server's values
 					Expect(syncthing.Configuration.Version).To(Equal(10))
-					Expect(syncthing.SystemStatus.MyID).To(Equal(myID.GoString()))
+					Expect(syncthing.SystemStatus.MyID).To(Equal(myID))
 					Expect(syncthing.SystemConnections.Total.At).To(Equal("test"))
 				})
 
@@ -188,11 +185,11 @@ var _ = Describe("Syncthing connection", func() {
 var _ = Describe("Syncthing struct methods", func() {
 	var (
 		syncthing  *Syncthing
-		myID, _    = protocol.DeviceIDFromString("ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4")
-		device1, _ = protocol.DeviceIDFromString("AIR6LPZ-7K4PTTV-UXQSMUU-CPQ5YWH-OEDFIIQ-JUG777G-2YQXXR5-YD6AWQR")
-		device2, _ = protocol.DeviceIDFromString("GYRZZQB-IRNPV4Z-T7TC52W-EQYJ3TT-FDQW6MW-DFLMU42-SSSU6EM-FBK2VAY")
-		device3, _ = protocol.DeviceIDFromString("VNPQDOJ-3V7DEWN-QBCTXF2-LSVNMHL-XTGL4GX-NCGQEXQ-THHBVWR-HVVMEQR")
-		device4, _ = protocol.DeviceIDFromString("E3TWU3G-UGFHTJE-SJLCDYH-KGQR3R6-7QMOM43-FOC3UFT-H4H54DC-GMK5RAO")
+		myID    = "ZNWFSWE-RWRV2BD-45BLMCV-LTDE2UR-4LJDW6J-R5BPWEB-TXD27XJ-IZF5RA4"
+		device1 = "AIR6LPZ-7K4PTTV-UXQSMUU-CPQ5YWH-OEDFIIQ-JUG777G-2YQXXR5-YD6AWQR"
+		device2 = "GYRZZQB-IRNPV4Z-T7TC52W-EQYJ3TT-FDQW6MW-DFLMU42-SSSU6EM-FBK2VAY"
+		device3 = "VNPQDOJ-3V7DEWN-QBCTXF2-LSVNMHL-XTGL4GX-NCGQEXQ-THHBVWR-HVVMEQR"
+		device4 = "E3TWU3G-UGFHTJE-SJLCDYH-KGQR3R6-7QMOM43-FOC3UFT-H4H54DC-GMK5RAO"
 	)
 
 	BeforeEach(func() {
@@ -223,7 +220,7 @@ var _ = Describe("Syncthing struct methods", func() {
 
 		It("finds the ones that are stored", func() {
 			devices := []struct {
-				deviceID   protocol.DeviceID
+				deviceID   string
 				shouldFind bool
 			}{
 				{
@@ -244,7 +241,7 @@ var _ = Describe("Syncthing struct methods", func() {
 				},
 			}
 			for _, device := range devices {
-				config, ok := syncthing.GetDeviceFromID(device.deviceID.GoString())
+				config, ok := syncthing.GetDeviceFromID(device.deviceID)
 				if device.shouldFind {
 					Expect(ok).To(BeTrue())
 					Expect(config).NotTo(BeNil())
@@ -290,7 +287,7 @@ var _ = Describe("Syncthing struct methods", func() {
 
 	It("returns the ID when set", func() {
 		// ID present should return a string
-		syncthing.SystemStatus.MyID = myID.GoString()
+		syncthing.SystemStatus.MyID = myID
 		Expect(syncthing.MyID()).NotTo(Equal(""))
 
 		syncthing.SystemStatus.MyID = ""
