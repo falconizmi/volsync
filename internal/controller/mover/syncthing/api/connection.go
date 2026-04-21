@@ -36,7 +36,7 @@ const (
 	SystemConnectionsEndpoint = "/rest/system/connections"
 	ConfigEndpoint            = "/rest/config"
 	ConfigDevicesEndpoint     = "/rest/config/devices"
-	ConfigFoldersEndpoint     = "/rest/config/folders/"
+	ConfigFoldersEndpoint     = "/rest/config/folders"
 	ConfigGUIEndpoint         = "/rest/config/gui"
 )
 
@@ -98,7 +98,7 @@ func (s *syncthingAPIConnection) PatchFolderDevices(
 	body := struct {
 		Devices []config.FolderDeviceConfiguration `json:"devices"`
 	}{Devices: devices}
-	_, err := s.jsonRequest(ConfigFoldersEndpoint+folderID, "PATCH", body)
+	_, err := s.jsonRequest(ConfigFoldersEndpoint+"/"+folderID, "PATCH", body)
 	if err != nil {
 		s.logger.Error(err, "Failed to update folder devices")
 	}

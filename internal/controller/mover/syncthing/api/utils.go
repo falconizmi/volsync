@@ -114,8 +114,8 @@ func CreateSyncthingTestServer(state *Syncthing, serverAPIKey string) *httptest.
 		}
 
 		// PATCH /rest/config/folders/{id} — update folder fields (devices list)
-		if strings.HasPrefix(path, ConfigFoldersEndpoint) && r.Method == "PATCH" {
-			folderID := strings.TrimPrefix(path, ConfigFoldersEndpoint)
+		if strings.HasPrefix(path, ConfigFoldersEndpoint+"/") && r.Method == "PATCH" {
+			folderID := strings.TrimPrefix(path, ConfigFoldersEndpoint+"/")
 			var patch struct {
 				Devices []config.FolderDeviceConfiguration `json:"devices"`
 			}
